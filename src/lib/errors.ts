@@ -20,7 +20,7 @@ export class DocumentProcessingError extends Error {
 export class EmbeddingError extends Error {
   readonly chunkCount: number;
 
-  constructor(message: string, chunkCount: number) {
+  constructor(message: string, chunkCount = 0) {
     super(message);
     this.name = 'EmbeddingError';
     this.chunkCount = chunkCount;
