@@ -17,10 +17,7 @@ export function getServiceClient() {
           autoRefreshToken: false,
           persistSession: false,
         },
-        db: {
-          // Use direct connection (not pooler) for Inngest long-running jobs
-          schema: 'public',
-        },
+        // No db override needed — 'public' schema is the default
       }
     );
   }
