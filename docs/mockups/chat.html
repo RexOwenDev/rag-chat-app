@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440">
+<title>RAG Knowledge Base — Chat Interface</title>
+<style>
+  :root {
+    --bg: #070d1a;
+    --surface: #0d1424;
+    --surface-2: #111827;
+    --accent: #00d4ff;
+    --accent-dim: rgba(0,212,255,0.1);
+    --border: rgba(0,212,255,0.12);
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #475569;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    display: flex;
+    width: 1440px;
+    height: 900px;
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ─────────────────────────────────────────────── */
+  .sidebar {
+    width: 256px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .sidebar-header {
+    padding: 18px 16px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .logo-icon {
+    width: 30px; height: 30px;
+    background: var(--accent);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; color: #070d1a;
+  }
+  .logo-text { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+  .workspace-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--accent-dim);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .new-btn {
+    margin: 10px 12px;
+    background: var(--accent);
+    color: #070d1a;
+    border: none; border-radius: 7px;
+    padding: 8px 14px;
+    font-size: 12px; font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .section-label {
+    padding: 10px 16px 4px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+  .conv-item {
+    padding: 8px 12px;
+    margin: 1px 8px;
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .conv-item.active {
+    background: var(--accent-dim);
+    border: 1px solid var(--border);
+  }
+  .conv-title {
+    font-size: 12px; color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .conv-meta { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ── Main ────────────────────────────────────────────────── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar {
+    height: 52px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 20px; gap: 12px;
+  }
+  .topbar-title { font-size: 14px; font-weight: 700; }
+  .topbar-sub { font-size: 11px; color: var(--text-muted); }
+  .pill {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 3px 9px;
+    font-size: 10px; font-weight: 600;
+    cursor: pointer;
+  }
+
+  .messages {
+    flex: 1; overflow-y: auto;
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .message { display: flex; gap: 10px; max-width: 780px; }
+  .message.user { align-self: flex-end; flex-direction: row-reverse; }
+
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; flex-shrink: 0;
+  }
+  .avatar.user { background: #1a3a62; color: var(--accent); }
+  .avatar.assistant { background: var(--accent); color: #070d1a; }
+
+  .bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 11px 15px;
+    font-size: 13px; line-height: 1.65;
+  }
+  .message.user .bubble {
+    background: #0d1e3d;
+    border-color: rgba(59,130,246,0.2);
+  }
+  .cite {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px;
+    background: var(--accent); color: #070d1a;
+    border-radius: 4px; font-size: 10px; font-weight: 800;
+    margin: 0 1px; cursor: pointer; vertical-align: middle;
+  }
+  .eval-row { display: flex; gap: 6px; margin-top: 8px; }
+  .eval-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 500;
+  }
+  .green { background: rgba(16,185,129,.1); color: #34d399; border: 1px solid rgba(16,185,129,.2); }
+  .blue  { background: rgba(59,130,246,.1); color: #60a5fa; border: 1px solid rgba(59,130,246,.2); }
+
+  .suggestions {
+    padding: 4px 20px 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .suggest-label { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+  .chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 13px;
+    font-size: 11px; color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .input-area {
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+  }
+  .input-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex; align-items: flex-end; gap: 8px;
+    padding: 10px 14px;
+  }
+  .input-box textarea {
+    flex: 1; background: transparent; border: none;
+    color: var(--text-primary); font-size: 13px;
+    resize: none; outline: none; height: 20px;
+    font-family: inherit; line-height: 1.4;
+  }
+  .send-btn {
+    width: 32px; height: 32px;
+    background: var(--accent); border: none; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+    color: #070d1a; font-weight: 900; font-size: 16px;
+  }
+
+  /* ── Sources Panel ───────────────────────────────────────── */
+  .sources-panel {
+    width: 296px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; flex-shrink: 0;
+  }
+  .sources-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .source-card {
+    margin: 12px 12px 0;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 12px;
+  }
+  .source-card-header {
+    display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px;
+  }
+  .src-num {
+    width: 18px; height: 18px; background: var(--accent); color: #070d1a;
+    border-radius: 4px; font-size: 10px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .src-title { font-size: 11px; font-weight: 700; color: var(--text-primary); }
+  .src-meta  { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+  .conf-row { display: flex; align-items: center; gap: 8px; margin-top: 7px; }
+  .conf-bg { flex: 1; height: 4px; background: rgba(255,255,255,.05); border-radius: 2px; overflow: hidden; }
+  .conf-fill { height: 100%; background: var(--accent); border-radius: 2px; }
+  .conf-pct { font-size: 10px; color: var(--accent); font-weight: 700; }
+  .src-excerpt {
+    font-size: 10px; color: var(--text-muted); line-height: 1.5; margin-top: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .also-retrieved {
+    padding: 10px 12px;
+    border-top: 1px solid var(--border);
+    margin-top: 12px;
+  }
+  .also-label { font-size: 10px; color: var(--text-muted); margin-bottom: 6px; }
+  .also-item {
+    font-size: 11px; color: var(--text-secondary);
+    padding: 5px 8px; background: var(--bg);
+    border-radius: 5px; margin-bottom: 4px;
+    display: flex; justify-content: space-between;
+  }
+  .also-pct { color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo">
+      <div class="logo-icon">K</div>
+      <span class="logo-text">KnowledgeBase AI</span>
+    </div>
+    <span class="workspace-pill">● HR Workspace</span>
+  </div>
+  <button class="new-btn">+ New Conversation</button>
+  <div class="section-label">Recent</div>
+  <div class="conv-item active">
+    <div class="conv-title">Parental Leave Policy</div>
+    <div class="conv-meta">Today · 4 messages</div>
+  </div>
+  <div class="conv-item">
+    <div class="conv-title">Remote Work Setup Stipend</div>
+    <div class="conv-meta">Yesterday · 6 messages</div>
+  </div>
+  <div class="conv-item">
+    <div class="conv-title">401k Vesting Schedule</div>
+    <div class="conv-meta">2 days ago · 3 messages</div>
+  </div>
+  <div class="conv-item">
+    <div class="conv-title">FMLA Eligibility Requirements</div>
+    <div class="conv-meta">3 days ago · 5 messages</div>
+  </div>
+  <div class="conv-item">
+    <div class="conv-title">Annual Review Timeline</div>
+    <div class="conv-meta">5 days ago · 2 messages</div>
+  </div>
+</div>
+
+<!-- Main chat area -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Parental Leave Policy</div>
+      <div class="topbar-sub">8 documents · 48 chunks indexed</div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px;">
+      <span class="pill">Export PDF</span>
+    </div>
+  </div>
+
+  <div class="messages">
+    <!-- User turn 1 -->
+    <div class="message user">
+      <div class="avatar user">OQ</div>
+      <div class="bubble">How much parental leave does Acme offer?</div>
+    </div>
+
+    <!-- Assistant turn 1 -->
+    <div class="message">
+      <div class="avatar assistant">K</div>
+      <div>
+        <div class="bubble">
+          Acme provides generous parental leave benefits <span class="cite">1</span>.
+          The primary caregiver receives up to <strong>12 weeks of fully paid parental leave</strong>,
+          while the secondary caregiver receives <strong>4 weeks</strong> <span class="cite">1</span>.
+          This leave must be taken within 12 months of a qualifying event such as birth, adoption,
+          or foster placement <span class="cite">2</span>.
+        </div>
+        <div class="eval-row">
+          <span class="eval-badge green">↑ Faithfulness 94%</span>
+          <span class="eval-badge blue">↑ Relevance 97%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- User turn 2 -->
+    <div class="message user">
+      <div class="avatar user">OQ</div>
+      <div class="bubble">What about FMLA eligibility requirements?</div>
+    </div>
+
+    <!-- Assistant turn 2 -->
+    <div class="message">
+      <div class="avatar assistant">K</div>
+      <div>
+        <div class="bubble">
+          To qualify for FMLA at Acme you must meet two criteria <span class="cite">2</span>:
+          you must have worked here for <strong>at least 12 months</strong> and logged
+          <strong>at least 1,250 hours</strong> in the preceding year.
+          FMLA provides up to 12 weeks of unpaid, job-protected leave for qualifying family
+          and medical reasons.
+        </div>
+        <div class="eval-row">
+          <span class="eval-badge green">↑ Faithfulness 97%</span>
+          <span class="eval-badge green">↑ Relevance 95%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Suggested questions -->
+  <div class="suggestions">
+    <span class="suggest-label">Suggested:</span>
+    <div class="chip">Can parents take leave simultaneously?</div>
+    <div class="chip">How do I request parental leave?</div>
+    <div class="chip">Is parental leave paid or unpaid?</div>
+  </div>
+
+  <!-- Input -->
+  <div class="input-area">
+    <div class="input-box">
+      <textarea>Can both parents take parental leave at the same time?</textarea>
+      <button class="send-btn">↑</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sources panel -->
+<div class="sources-panel">
+  <div class="sources-header">
+    <span class="cite" style="background:var(--accent)">2</span>
+    Sources
+    <span style="margin-left:auto;font-size:10px;color:var(--text-muted)">2 cited</span>
+  </div>
+
+  <div class="source-card">
+    <div class="source-card-header">
+      <div class="src-num">1</div>
+      <div>
+        <div class="src-title">PTO &amp; Leave Policy</div>
+        <div class="src-meta">Page 8 · Parental Leave</div>
+      </div>
+    </div>
+    <div class="conf-row">
+      <div class="conf-bg"><div class="conf-fill" style="width:94%"></div></div>
+      <span class="conf-pct">94%</span>
+    </div>
+    <div class="src-excerpt">
+      "Acme provides up to 12 weeks of paid parental leave for the primary caregiver
+      and 4 weeks for the secondary caregiver following the birth, adoption, or foster
+      placement of a child…"
+    </div>
+  </div>
+
+  <div class="source-card">
+    <div class="source-card-header">
+      <div class="src-num">2</div>
+      <div>
+        <div class="src-title">PTO &amp; Leave Policy</div>
+        <div class="src-meta">Page 11 · FMLA Leave</div>
+      </div>
+    </div>
+    <div class="conf-row">
+      <div class="conf-bg"><div class="conf-fill" style="width:87%"></div></div>
+      <span class="conf-pct">87%</span>
+    </div>
+    <div class="src-excerpt">
+      "To be eligible, employees must have worked at Acme for at least 12 months
+      and 1,250 hours during the preceding 12-month period…"
+    </div>
+  </div>
+
+  <div class="also-retrieved">
+    <div class="also-label">Also retrieved</div>
+    <div class="also-item">
+      <span>Employee Handbook 2024</span>
+      <span class="also-pct">62%</span>
+    </div>
+    <div class="also-item">
+      <span>Benefits Guide Q1 2025</span>
+      <span class="also-pct">54%</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

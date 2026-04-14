@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:seed": "npx supabase db seed",
+    "generate:diagrams": "npx ts-node scripts/generate-diagrams.ts",
+    "generate:hero": "node scripts/generate-hero.mjs",
+    "generate:mockups": "npx ts-node scripts/generate-mockups.ts",
+    "generate:all": "npm run generate:diagrams && npm run generate:hero && npm run generate:mockups"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.69",
