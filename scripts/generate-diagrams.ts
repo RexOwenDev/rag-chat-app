@@ -23,6 +23,12 @@ import { join } from 'path';
 
 const run = promisify(execFile);
 
+// On Windows, .cmd files (mmdc.cmd) require shell execution.
+// All args here are hardcoded constants, so shell: true is safe — no user input is
+// interpolated into the command string.
+const IS_WIN = process.platform === 'win32';
+const MMDC = join(process.cwd(), 'node_modules', '.bin', IS_WIN ? 'mmdc.cmd' : 'mmdc');
+
 const DOCS_DIR = join(process.cwd(), 'docs');
 mkdirSync(DOCS_DIR, { recursive: true });
 
@@ -190,11 +196,11 @@ async function main(): Promise<void> {
     writeFileSync(srcPath, diagram.content, 'utf8');
 
     try {
-      // execFile: args as array — no shell expansion, no injection risk
+      // execFile: args as array — no shell injection risk (all args are constant strings)
       await run(
-        'npx',
-        ['mmdc', '-i', srcPath, '-o', outPath, '-t', 'dark', '-b', 'transparent'],
-        { cwd: process.cwd() }
+        MMDC,
+        ['-i', srcPath, '-o', outPath, '-t', 'dark', '-b', 'transparent'],
+        { cwd: process.cwd(), shell: IS_WIN }
       );
       console.log(`✓ ${outPath}`);
     } catch (err) {

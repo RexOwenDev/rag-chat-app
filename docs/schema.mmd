@@ -1,0 +1,74 @@
+erDiagram
+  organizations {
+    uuid id PK
+    text name
+    timestamptz created_at
+  }
+  workspaces {
+    uuid id PK
+    uuid org_id FK
+    text name
+    text system_prompt
+    timestamptz updated_at
+  }
+  workspace_members {
+    uuid id PK
+    uuid workspace_id FK
+    uuid user_id FK
+    text role
+  }
+  documents {
+    uuid id PK
+    uuid workspace_id FK
+    text title
+    text source_type
+    text status
+    int chunk_count
+    int version
+    timestamptz deleted_at
+  }
+  chunks {
+    uuid id PK
+    uuid document_id FK
+    uuid workspace_id FK
+    text content
+    text heading_context
+    int chunk_index
+    vector_1536 embedding
+    tsvector fts
+  }
+  conversations {
+    uuid id PK
+    uuid workspace_id FK
+    uuid user_id FK
+    text title
+    timestamptz updated_at
+  }
+  messages {
+    uuid id PK
+    uuid conversation_id FK
+    text role
+    text content
+    uuid_array cited_chunk_ids
+    numeric faithfulness_score
+    numeric relevance_score
+    int input_tokens
+    int output_tokens
+  }
+  query_events {
+    uuid id PK
+    uuid workspace_id FK
+    uuid conversation_id FK
+    int latency_ms
+    numeric total_cost_usd
+    timestamptz created_at
+  }
+
+  organizations ||--o{ workspaces : "has"
+  workspaces ||--o{ workspace_members : "has"
+  workspaces ||--o{ documents : "contains"
+  workspaces ||--o{ conversations : "has"
+  workspaces ||--o{ query_events : "tracks"
+  documents ||--o{ chunks : "split into"
+  conversations ||--o{ messages : "has"
+  conversations ||--o{ query_events : "logged in"

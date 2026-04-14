@@ -1,0 +1,25 @@
+flowchart TD
+  subgraph Ingestion["Ingestion Pipeline"]
+    A[Upload PDF / DOCX / URL] --> B[Supabase Storage]
+    B --> C[Inngest Step Function]
+    C --> D[Extract Text<br/>pdf-parse / mammoth / cheerio]
+    D --> E[Semantic Chunker<br/>400 token max · 50 overlap]
+    E --> F[OpenAI Embeddings<br/>text-embedding-3-small · 1536d]
+    F --> G[(pgvector · chunks table)]
+    G --> H[status: ready ✓]
+  end
+
+  subgraph Query["RAG Query Pipeline"]
+    I[User Question] --> J[Embed Query<br/>Redis cache · SHA-256 key]
+    J --> K[Hybrid Search RPC<br/>BM25 FTS + Vector Cosine]
+    K --> L[Top 20 Candidates<br/>Reciprocal Rank Fusion]
+    L --> M[Cohere Rerank 3<br/>Cross-encoder · Top 5]
+    M --> N[Build Context<br/>numbered · sanitized]
+    N --> O[Claude via AI Gateway<br/>claude-sonnet-4.6 · streaming]
+    O --> P[Response + Citation Badges<br/>1 2 3 inline]
+  end
+
+  G -.->|hybrid_search\nPostgres RPC| K
+
+  style Ingestion fill:#0d1424,stroke:#00d4ff,stroke-width:1px,color:#e2e8f0
+  style Query fill:#0d1424,stroke:#00d4ff,stroke-width:1px,color:#e2e8f0

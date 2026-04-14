@@ -1,0 +1,33 @@
+sequenceDiagram
+  actor User
+  participant UI as Next.js UI
+  participant API as API Route
+  participant Stor as Supabase Storage
+  participant DB as Supabase DB
+  participant Inn as Inngest
+  participant OAI as OpenAI Embeddings
+
+  User->>UI: Drop file / paste URL
+  UI->>API: POST /api/workspaces/{id}/documents
+  API->>API: Auth check + RBAC + Zod validate
+  API->>Stor: Upload (uuid path)
+  Stor-->>API: storage_path
+  API->>DB: INSERT documents (status: pending)
+  API->>Inn: Send document/process event
+  API-->>UI: 200 { document }
+  UI->>UI: Optimistic list update
+
+  Inn->>DB: UPDATE status: processing
+  Note over Inn: Step 1 — extract-text<br/>pdf-parse / mammoth / cheerio
+
+  Inn->>Inn: Step 2 — chunk-text
+  Note over Inn: Paragraph-boundary aware<br/>400 token max · 50 overlap
+
+  Inn->>OAI: Batch embed (groups of 100)
+  OAI-->>Inn: float32[1536] per chunk
+
+  Inn->>DB: INSERT chunks (embedding, fts, heading_context)
+  Inn->>DB: UPDATE documents SET status=ready, chunk_count=N
+
+  DB-->>UI: Realtime postgres_changes event
+  UI->>UI: Show status: ready ✓

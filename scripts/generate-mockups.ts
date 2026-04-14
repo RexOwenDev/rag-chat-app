@@ -19,6 +19,7 @@
 
 import { chromium } from 'playwright';
 import { resolve } from 'path';
+import { pathToFileURL } from 'url';
 import { mkdirSync } from 'fs';
 
 const DOCS_DIR = resolve(process.cwd(), 'docs');
@@ -56,7 +57,7 @@ async function main(): Promise<void> {
   for (const mockup of mockups) {
     const page = await browser.newPage();
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(`file://${mockup.html}`);
+    await page.goto(pathToFileURL(mockup.html).href);
     // Let CSS animations and fonts settle before capturing
     await page.waitForTimeout(400);
     await page.screenshot({ path: mockup.out });
