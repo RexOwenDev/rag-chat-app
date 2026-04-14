@@ -133,7 +133,10 @@ export async function POST(request: Request, { params }: RouteContext) {
   }
 
   const { messages, conversationId: existingConversationId } = parsed.data;
-  const userQuery = messages.at(-1)?.content ?? '';
+  // Find the last user-role message (not just last message — the array tail could be
+  // an assistant message if the client re-sends history for context).
+  const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
+  const userQuery = lastUserMessage?.content ?? '';
   if (!userQuery) {
     return NextResponse.json({ error: 'No user message found' }, { status: 400 });
   }
@@ -191,6 +194,12 @@ export async function POST(request: Request, { params }: RouteContext) {
     });
     rerankChunkIds = reranked.map((c) => c.chunkId);
 
+    if (reranked.length === 0) {
+      // No matching chunks — Claude will answer using its training knowledge only.
+      // The system prompt tells it to say so clearly. Log for observability.
+      console.info('[chat] No matching chunks found for query', { workspaceId, queryLength: userQuery.length });
+    }
+
     const { contextBlock, citations: builtCitations } = buildContext(reranked);
     citations = builtCitations;
 
@@ -215,8 +224,16 @@ export async function POST(request: Request, { params }: RouteContext) {
       execute: async ({ writer }) => {
         // Send citation metadata as a typed data part before the text stream.
         // Client reads this via isDataUIPart(part) where part.type === 'data-citations'.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (writer as any).write({ type: 'data-citations', data: citations });
+        // writer.write is not typed in the public API; narrowing to the minimal
+        // required shape avoids the broad `any` while keeping call-site safety.
+        try {
+          (writer as { write: (part: unknown) => void }).write({
+            type: 'data-citations',
+            data: citations,
+          });
+        } catch (writeErr) {
+          console.warn('[chat] Failed to write citations part to stream', writeErr);
+        }
 
         const result = streamText({
           model: gateway('anthropic/claude-sonnet-4.6'),
@@ -232,7 +249,9 @@ export async function POST(request: Request, { params }: RouteContext) {
           onFinish: async ({ text, usage }) => {
             const latencyMs = Date.now() - t0;
 
-            // Run DB writes in parallel; capture assistant message ID for eval
+            // Save assistant message + update conversation timestamp in parallel.
+            // trackQueryEvent is fire-and-forget analytics — isolated so its failure
+            // cannot abort the message save or prevent the eval Inngest send.
             const [assistantMsgId] = await Promise.all([
               saveMessage(supabase, conversationId!, 'assistant', text, {
                 retrievedChunkIds,
@@ -241,17 +260,20 @@ export async function POST(request: Request, { params }: RouteContext) {
                 outputTokens: usage.outputTokens,
               }),
               supabase.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId),
-              trackQueryEvent(supabase, {
-                workspaceId,
-                conversationId: conversationId!,
-                userId: user.id,
-                queryText: userQuery,
-                retrievedChunkIds,
-                rerankChunkIds,
-                responseTokens: usage.outputTokens ?? 0,
-                latencyMs,
-              }),
             ]);
+
+            void trackQueryEvent(supabase, {
+              workspaceId,
+              conversationId: conversationId!,
+              userId: user.id,
+              queryText: userQuery,
+              retrievedChunkIds,
+              rerankChunkIds,
+              responseTokens: usage.outputTokens ?? 0,
+              latencyMs,
+            }).catch((e: unknown) => {
+              console.error('[chat] trackQueryEvent failed (non-blocking)', e);
+            });
 
             // Fire-and-forget: async eval runs in Inngest after the stream completes
             if (assistantMsgId) {

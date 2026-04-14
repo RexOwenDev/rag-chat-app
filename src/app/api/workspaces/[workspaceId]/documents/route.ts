@@ -30,7 +30,6 @@ import {
 } from '@/lib/validation/documents';
 import { assertSafeURL } from '@/lib/rag/extractors/ssrf';
 import { config } from '@/lib/config';
-import { RateLimitError, AuthorizationError } from '@/lib/errors';
 
 // Rate limiter: sliding window, 10 uploads per user per 10 minutes
 const uploadRatelimit = new Ratelimit({
@@ -197,16 +196,29 @@ export async function POST(
       );
     }
 
-    // 7. Send Inngest event
-    await inngest.send({
-      name: 'document/process',
-      data: {
-        documentId: document.id,
-        workspaceId,
-        storagePath,
-        sourceType,
-      },
-    });
+    // 7. Send Inngest event — if this fails, roll back the DB row and storage file
+    // so the document doesn't get stuck permanently in 'pending' with no processor.
+    try {
+      await inngest.send({
+        name: 'document/process',
+        data: {
+          documentId: document.id,
+          workspaceId,
+          storagePath,
+          sourceType,
+        },
+      });
+    } catch (inngestErr) {
+      console.error('[documents] Failed to dispatch Inngest event for file upload', inngestErr);
+      await Promise.allSettled([
+        supabase.from('documents').delete().eq('id', document.id),
+        supabase.storage.from('documents').remove([storagePath]),
+      ]);
+      return NextResponse.json(
+        { error: 'Failed to start document processing. Please try again.' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ document }, { status: 201 });
   }
@@ -267,17 +279,27 @@ export async function POST(
       );
     }
 
-    // 7. Send Inngest event
-    await inngest.send({
-      name: 'document/process',
-      data: {
-        documentId: document.id,
-        workspaceId,
-        storagePath: null,
-        sourceType: 'url',
-        sourceUrl: url,
-      },
-    });
+    // 7. Send Inngest event — if this fails, roll back the DB row
+    // so the document doesn't get stuck permanently in 'pending' with no processor.
+    try {
+      await inngest.send({
+        name: 'document/process',
+        data: {
+          documentId: document.id,
+          workspaceId,
+          storagePath: null,
+          sourceType: 'url',
+          sourceUrl: url,
+        },
+      });
+    } catch (inngestErr) {
+      console.error('[documents] Failed to dispatch Inngest event for URL import', inngestErr);
+      await supabase.from('documents').delete().eq('id', document.id);
+      return NextResponse.json(
+        { error: 'Failed to start document processing. Please try again.' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ document }, { status: 201 });
   }
@@ -287,7 +309,3 @@ export async function POST(
     { status: 415 }
   );
 }
-
-// Suppress unused import warning — these are used in the function body
-void RateLimitError;
-void AuthorizationError;

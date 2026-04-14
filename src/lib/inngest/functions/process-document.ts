@@ -152,6 +152,11 @@ export const processDocument = inngest.createFunction(
     // Step 4: Insert chunks and mark document ready
     // ─────────────────────────────────────────────────────────────────────────
     await step.run('insert-chunks', async () => {
+      // Idempotent: clear any partial chunks from a previous failed attempt.
+      // Without this, a retry after a partial batch insert would create duplicate
+      // chunks, causing double-weighted RRF scores and corrupted search results.
+      await supabase.from('chunks').delete().eq('document_id', documentId);
+
       // Batch insert in groups of 500 (Supabase recommends ≤1000 per insert)
       for (let i = 0; i < chunks.length; i += CHUNK_INSERT_BATCH) {
         const batchChunks = chunks.slice(i, i + CHUNK_INSERT_BATCH);

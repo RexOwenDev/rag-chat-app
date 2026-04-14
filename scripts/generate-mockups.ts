@@ -1,7 +1,7 @@
 /**
  * scripts/generate-mockups.ts
  *
- * Screenshots the three static HTML mockups at 1440×900 using Playwright.
+ * Screenshots the static HTML mockups at 1440×900 using Playwright.
  * No running Next.js app or API keys required.
  *
  * Prerequisites:
@@ -15,6 +15,8 @@
  *   docs/chat-interface.png
  *   docs/document-manager.png
  *   docs/analytics-dashboard.png
+ *   docs/login-page.png
+ *   docs/workspace-settings.png
  */
 
 import { chromium } from 'playwright';
@@ -47,10 +49,20 @@ const mockups: Mockup[] = [
     out: resolve(DOCS_DIR, 'analytics-dashboard.png'),
     label: 'Analytics Dashboard',
   },
+  {
+    html: resolve(process.cwd(), 'docs/mockups/login.html'),
+    out: resolve(DOCS_DIR, 'login-page.png'),
+    label: 'Login Page',
+  },
+  {
+    html: resolve(process.cwd(), 'docs/mockups/settings.html'),
+    out: resolve(DOCS_DIR, 'workspace-settings.png'),
+    label: 'Workspace Settings',
+  },
 ];
 
 async function main(): Promise<void> {
-  console.log(`Screenshotting ${mockups.length} mockups at 1440×900…\n`);
+  console.log(`Screenshotting ${mockups.length} mockups at 1440×900…`);
 
   const browser = await chromium.launch();
 

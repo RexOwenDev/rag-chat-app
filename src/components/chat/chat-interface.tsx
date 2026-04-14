@@ -58,11 +58,10 @@ export function ChatInterface({
   }
 
   function handleSelectSuggestion(question: string) {
-    setInputValue(question);
-    setTimeout(() => {
-      void sendMessage(question);
-      setInputValue('');
-    }, 50);
+    // Guard: don't send if a response is already streaming.
+    if (isLoading) return;
+    setInputValue('');
+    void sendMessage(question);
   }
 
   // ─── Empty state (no documents) ────────────────────────────────────────
@@ -91,9 +90,9 @@ export function ChatInterface({
   // ─── Initial empty chat ─────────────────────────────────────────────────
   const isEmpty = messages.length === 0 && !isLoading;
 
-  // Determine which citations belong to the last assistant message
-  const lastAssistantIdx = [...messages].reverse().findIndex((m) => m.role === 'assistant');
-  const lastAssistantIsRecent = lastAssistantIdx === 0; // last message is assistant
+  // Citations belong to the last message only if it's an assistant message.
+  const lastAssistantIsRecent =
+    messages.length > 0 && messages[messages.length - 1]?.role === 'assistant';
 
   return (
     <div className="flex h-full flex-col">

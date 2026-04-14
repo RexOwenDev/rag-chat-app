@@ -36,27 +36,35 @@ const ai = new GoogleGenAI({ apiKey });
 
 console.log('Generating hero image with Gemini Imagen 4.0...');
 
+const PROMPT = [
+  'Enterprise AI knowledge base application UI.',
+  'Dark navy background #070d1a with subtle blueprint grid lines.',
+  'Electric cyan accent color #00d4ff glowing effects.',
+  'Split-screen composition: left side shows a clean chat conversation with',
+  'numbered citation badges [1] [2] [3] rendered in glowing cyan.',
+  'Right panel shows source document cards with confidence percentage bars',
+  'showing 94% and 87%, document titles in white text.',
+  'Glassmorphism card style with frosted dark surfaces.',
+  'Professional enterprise software aesthetic, minimal and clean.',
+  'No text overlays, no logos, no watermarks.',
+  '16:9 cinematic aspect ratio. Photorealistic UI render.',
+].join(' ');
+
 const result = await ai.models.generateImages({
   model: 'imagen-4.0-generate-001',
-  prompt: [
-    'Enterprise AI knowledge base application UI.',
-    'Dark navy background #070d1a with subtle blueprint grid lines.',
-    'Electric cyan accent color #00d4ff glowing effects.',
-    'Split-screen composition: left side shows a clean chat conversation with',
-    'numbered citation badges [1] [2] [3] rendered in glowing cyan.',
-    'Right panel shows source document cards with confidence percentage bars',
-    'showing 94% and 87%, document titles in white text.',
-    'Glassmorphism card style with frosted dark surfaces.',
-    'Professional enterprise software aesthetic, minimal and clean.',
-    'No text overlays, no logos, no watermarks.',
-    '16:9 cinematic aspect ratio. Photorealistic UI render.',
-  ].join(' '),
-  number_of_images: 1,
-  aspect_ratio: '16:9',
+  prompt: PROMPT,
+  config: {
+    numberOfImages: 1,
+    aspectRatio: '16:9',
+  },
 });
 
-const imageBytes = result.generatedImages[0].image.imageBytes;
-const outputPath = join(DOCS_DIR, 'hero.png');
+const imageBytes = result.generatedImages[0]?.image?.imageBytes;
+if (!imageBytes) {
+  console.error('No image bytes returned. Response:', JSON.stringify(result, null, 2));
+  process.exit(1);
+}
 
+const outputPath = join(DOCS_DIR, 'hero.png');
 writeFileSync(outputPath, Buffer.from(imageBytes, 'base64'));
 console.log(`✓ Generated ${outputPath}`);

@@ -109,11 +109,16 @@ export async function rerank({
 
       const data = (await response.json()) as CohereRerankResponse;
 
-      // Map Cohere indices back to our enriched candidates
-      return data.results.map((r) => ({
-        ...enriched[r.index]!,
-        relevanceScore: r.relevance_score,
-      }));
+      // Map Cohere indices back to our enriched candidates.
+      // Filter out any out-of-bounds indices defensively — Cohere should never
+      // return an index >= enriched.length, but an API bug would otherwise cause
+      // `enriched[r.index]` to be undefined, corrupting downstream confidence scores.
+      return data.results
+        .filter((r) => r.index >= 0 && r.index < enriched.length)
+        .map((r) => ({
+          ...enriched[r.index]!,
+          relevanceScore: r.relevance_score,
+        }));
     } catch (err) {
       // Network timeout, parse error, etc. — log and fall back
       console.warn('[reranker] Cohere call failed:', err instanceof Error ? err.message : String(err), '— falling back to RRF order');

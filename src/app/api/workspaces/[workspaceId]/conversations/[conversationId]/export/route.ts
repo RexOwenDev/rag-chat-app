@@ -70,6 +70,13 @@ export async function GET(_request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: msgError.message }, { status: 500 });
   }
 
+  if (!messages || messages.length === 0) {
+    return NextResponse.json(
+      { error: 'This conversation has no messages to export.' },
+      { status: 422 }
+    );
+  }
+
   // Resolve chunk IDs → document titles
   const allChunkIds = Array.from(
     new Set(

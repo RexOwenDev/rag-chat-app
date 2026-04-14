@@ -14,6 +14,7 @@
  */
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useQuery } from '@tanstack/react-query';
 import {
   BarChart2,
@@ -26,9 +27,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { KpiCard } from './kpi-card';
-import { QueriesChart } from './queries-chart';
-import { TopDocumentsChart } from './top-documents-chart';
 import type { AnalyticsData } from '@/lib/analytics/track';
+
+// Recharts is ~450 KB. Lazy-load both chart components with ssr:false so the
+// bundle is deferred until the analytics page is first visited, and to avoid
+// SSR issues with browser-only Recharts internals (ResizeObserver, etc.).
+const QueriesChart = dynamic(
+  () => import('./queries-chart').then((m) => ({ default: m.QueriesChart })),
+  { ssr: false, loading: () => <Skeleton className="h-64 w-full rounded-xl" /> }
+);
+const TopDocumentsChart = dynamic(
+  () => import('./top-documents-chart').then((m) => ({ default: m.TopDocumentsChart })),
+  { ssr: false, loading: () => <Skeleton className="h-52 w-full rounded-xl" /> }
+);
 
 interface AnalyticsDashboardProps {
   workspaceId: string;

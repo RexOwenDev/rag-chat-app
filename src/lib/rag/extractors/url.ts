@@ -14,7 +14,7 @@ export interface UrlExtractResult {
   resolvedTitle: string | null;
 }
 
-const USER_AGENT = 'KnowledgeBase-AI/1.0 (+https://github.com/owenq/rag-knowledge-base)';
+const USER_AGENT = 'KnowledgeBase-AI/1.0 (+https://github.com/your-username/rag-knowledge-base)';
 
 // Tags whose content we strip entirely before text extraction
 const NOISE_SELECTORS = [

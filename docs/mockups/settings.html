@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KnowledgeBase AI — Workspace Settings</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #070d1a;
+      --surface:     #0d1424;
+      --surface-2:   #111b2e;
+      --surface-3:   #162035;
+      --accent:      #00d4ff;
+      --accent-dim:  rgba(0, 212, 255, 0.10);
+      --accent-glow: rgba(0, 212, 255, 0.20);
+      --border:      rgba(0, 212, 255, 0.12);
+      --border-2:    rgba(255, 255, 255, 0.06);
+      --text-1:      #e2e8f0;
+      --text-2:      #94a3b8;
+      --text-3:      #475569;
+      --green:       #22c55e;
+      --yellow:      #eab308;
+      --red:         #ef4444;
+      --blue:        #3b82f6;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text-1);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* ── Sidebar ─────────────────────────────────── */
+    .sidebar {
+      width: 240px;
+      min-height: 100vh;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 20px 0;
+      flex-shrink: 0;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 16px 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .logo-dot {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, var(--accent) 0%, #0088cc 100%);
+      border-radius: 6px;
+    }
+
+    .logo-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-1);
+    }
+
+    .sidebar-section {
+      padding: 6px 8px;
+    }
+
+    .sidebar-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-3);
+      padding: 0 8px;
+      margin-bottom: 4px;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text-2);
+      transition: background 0.1s;
+    }
+
+    .sidebar-item:hover { background: var(--surface-2); }
+    .sidebar-item.active {
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid var(--border);
+    }
+
+    .sidebar-item svg {
+      width: 15px;
+      height: 15px;
+      opacity: 0.7;
+      flex-shrink: 0;
+    }
+
+    .sidebar-item.active svg { opacity: 1; }
+
+    .workspace-badge {
+      margin: 12px 8px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .workspace-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-1);
+    }
+
+    .workspace-meta {
+      font-size: 11px;
+      color: var(--text-3);
+      margin-top: 2px;
+    }
+
+    /* ── Main ─────────────────────────────────────── */
+    .main {
+      flex: 1;
+      padding: 32px 40px;
+      max-width: 800px;
+    }
+
+    .page-header {
+      margin-bottom: 32px;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-1);
+    }
+
+    .page-subtitle {
+      font-size: 13px;
+      color: var(--text-2);
+      margin-top: 4px;
+    }
+
+    /* ── Card ──────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border-2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-1);
+    }
+
+    .card-subtitle {
+      font-size: 12px;
+      color: var(--text-3);
+      margin-top: 2px;
+    }
+
+    .card-body {
+      padding: 20px 24px;
+    }
+
+    /* ── Form elements ─────────────────────────────── */
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-2);
+      margin-bottom: 6px;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--text-1);
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.15s;
+      resize: vertical;
+    }
+
+    input[type="text"]:focus, textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    .hint {
+      font-size: 11px;
+      color: var(--text-3);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    .form-row {
+      margin-bottom: 18px;
+    }
+
+    .form-row:last-child { margin-bottom: 0; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #070d1a;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-2);
+      border-color: var(--border);
+    }
+
+    .btn-ghost:hover { background: var(--surface-2); color: var(--text-1); }
+
+    .btn-danger {
+      background: transparent;
+      color: var(--red);
+      border-color: rgba(239,68,68,0.25);
+    }
+
+    .btn-danger:hover { background: rgba(239,68,68,0.1); }
+
+    /* ── Members table ─────────────────────────────── */
+    .members-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .members-table th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-3);
+      padding: 0 12px 10px;
+    }
+
+    .members-table td {
+      padding: 10px 12px;
+      border-top: 1px solid var(--border-2);
+      font-size: 13px;
+    }
+
+    .member-name {
+      font-weight: 500;
+      color: var(--text-1);
+    }
+
+    .member-email {
+      font-size: 12px;
+      color: var(--text-3);
+      margin-top: 1px;
+    }
+
+    .member-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .member-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-owner  { background: rgba(0,212,255,0.12); color: var(--accent); border: 1px solid rgba(0,212,255,0.2); }
+    .badge-editor { background: rgba(59,130,246,0.12); color: var(--blue);   border: 1px solid rgba(59,130,246,0.2); }
+    .badge-viewer { background: rgba(148,163,184,0.1); color: var(--text-2); border: 1px solid var(--border); }
+
+    .actions-cell {
+      text-align: right;
+    }
+
+    /* ── Invite row ─────────────────────────────────── */
+    .invite-row {
+      display: flex;
+      gap: 10px;
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-2);
+      background: var(--surface-2);
+    }
+
+    .invite-row input[type="text"] {
+      flex: 1;
+      height: 38px;
+      padding: 0 12px;
+      resize: none;
+    }
+
+    .invite-select {
+      height: 38px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0 10px;
+      color: var(--text-1);
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+      min-width: 90px;
+    }
+
+    /* ── Danger zone ────────────────────────────────── */
+    .danger-card {
+      border-color: rgba(239,68,68,0.25);
+    }
+
+    .danger-card .card-header {
+      border-bottom-color: rgba(239,68,68,0.15);
+    }
+
+    .danger-card .card-title {
+      color: var(--red);
+    }
+
+    .danger-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .danger-desc {
+      font-size: 13px;
+      color: var(--text-2);
+      line-height: 1.5;
+    }
+
+    .danger-desc strong {
+      color: var(--text-1);
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    /* ── Saved state banner ─────────────────────────── */
+    .save-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.25);
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: var(--green);
+    }
+
+    .save-banner svg {
+      width: 15px;
+      height: 15px;
+      stroke: var(--green);
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    .save-banner-inner {
+      display: flex;
+      align-items: center;
+    }
+
+    .chars-left {
+      font-size: 11px;
+      color: var(--text-3);
+      text-align: right;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-dot"></div>
+    <span class="logo-label">KnowledgeBase AI</span>
+  </div>
+
+  <div class="workspace-badge">
+    <div class="workspace-name">HR Workspace</div>
+    <div class="workspace-meta">8 documents · 1,284 chunks</div>
+  </div>
+
+  <div class="sidebar-section">
+    <div class="sidebar-section-label">Navigation</div>
+    <div class="sidebar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Chat
+    </div>
+    <div class="sidebar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Documents
+    </div>
+    <div class="sidebar-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Analytics
+    </div>
+    <div class="sidebar-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 1.93 11.14A10 10 0 0 1 12 22a10 10 0 0 1-9-5.5A10 10 0 0 1 5 4.93"/></svg>
+      Settings
+    </div>
+  </div>
+</nav>
+
+<!-- Main content -->
+<main class="main">
+  <div class="page-header">
+    <div class="page-title">Workspace Settings</div>
+    <div class="page-subtitle">Configure HR Workspace — only owners can change these settings</div>
+  </div>
+
+  <!-- Saved banner -->
+  <div class="save-banner">
+    <div class="save-banner-inner">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      System prompt saved — changes will apply to new conversations.
+    </div>
+    <span style="font-size:11px;opacity:0.6;">just now</span>
+  </div>
+
+  <!-- General settings -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">General</div>
+        <div class="card-subtitle">Workspace identity and display settings</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="form-row">
+        <label>Workspace name</label>
+        <input type="text" value="HR Workspace" />
+      </div>
+      <div class="form-row">
+        <label>Slug</label>
+        <input type="text" value="hr-workspace" style="font-family:monospace; font-size:12px;" />
+        <div class="hint">Used in URLs. Cannot be changed after creation.</div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:4px;">
+        <button class="btn btn-primary">Save changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- System prompt -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">System Prompt</div>
+        <div class="card-subtitle">Override the default assistant behavior for this workspace</div>
+      </div>
+      <button class="btn btn-ghost" style="font-size:12px;">Reset to default</button>
+    </div>
+    <div class="card-body">
+      <div class="form-row">
+        <label>Custom instructions for the assistant</label>
+        <textarea rows="6" style="font-size:13px;line-height:1.6;">You are an expert HR advisor for Acme Corp. When answering questions:
+- Always cite the specific policy document and section number
+- Use formal, professional language appropriate for HR communications
+- If a question involves potential legal liability, add a disclaimer to consult legal counsel
+- Refer to employees as "team members" throughout your responses</textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;">
+          <div class="hint">Appended to every conversation in this workspace. Max 2,000 characters.</div>
+          <div class="chars-left">342 / 2,000</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px;">
+        <button class="btn btn-ghost">Preview</button>
+        <button class="btn btn-primary">Save prompt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Members -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Team Members</div>
+        <div class="card-subtitle">4 members · Role-based access control enforced at the database layer</div>
+      </div>
+    </div>
+
+    <table class="members-table">
+      <thead>
+        <tr>
+          <th>Member</th>
+          <th>Role</th>
+          <th>Joined</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div class="member-row">
+              <div class="member-avatar" style="background:linear-gradient(135deg,#00d4ff,#0088cc);color:#070d1a;">OQ</div>
+              <div>
+                <div class="member-name">Owen Quintenta</div>
+                <div class="member-email">owen@acme.com</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge badge-owner">Owner</span></td>
+          <td style="color:var(--text-3);font-size:12px;">Mar 2, 2026</td>
+          <td class="actions-cell">
+            <span style="font-size:11px;color:var(--text-3);">You</span>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="member-row">
+              <div class="member-avatar" style="background:#1e3a5f;color:#60a5fa;">SC</div>
+              <div>
+                <div class="member-name">Sarah Chen</div>
+                <div class="member-email">sarah.chen@acme.com</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge badge-editor">Editor</span></td>
+          <td style="color:var(--text-3);font-size:12px;">Mar 5, 2026</td>
+          <td class="actions-cell">
+            <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px;">Change role</button>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="member-row">
+              <div class="member-avatar" style="background:#1a3520;color:#4ade80;">MR</div>
+              <div>
+                <div class="member-name">Marcus Reid</div>
+                <div class="member-email">m.reid@acme.com</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge badge-viewer">Viewer</span></td>
+          <td style="color:var(--text-3);font-size:12px;">Mar 10, 2026</td>
+          <td class="actions-cell" style="display:flex;justify-content:flex-end;gap:6px;align-items:center;">
+            <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px;">Change role</button>
+            <button class="btn btn-danger" style="padding:4px 10px;font-size:12px;">Remove</button>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="member-row">
+              <div class="member-avatar" style="background:#2d1f3d;color:#c084fc;">AL</div>
+              <div>
+                <div class="member-name">Aisha Lawson</div>
+                <div class="member-email">a.lawson@acme.com</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge badge-viewer">Viewer</span></td>
+          <td style="color:var(--text-3);font-size:12px;">Apr 1, 2026</td>
+          <td class="actions-cell" style="display:flex;justify-content:flex-end;gap:6px;align-items:center;">
+            <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px;">Change role</button>
+            <button class="btn btn-danger" style="padding:4px 10px;font-size:12px;">Remove</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="invite-row">
+      <input type="text" placeholder="colleague@company.com" style="height:38px;padding:0 12px;" />
+      <select class="invite-select">
+        <option>Editor</option>
+        <option>Viewer</option>
+      </select>
+      <button class="btn btn-primary" style="height:38px;white-space:nowrap;">Send invite</button>
+    </div>
+  </div>
+
+  <!-- Danger zone -->
+  <div class="card danger-card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Danger Zone</div>
+        <div class="card-subtitle">Destructive actions — cannot be undone</div>
+      </div>
+    </div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:18px;">
+      <div class="danger-item">
+        <div class="danger-desc">
+          <strong>Delete all documents</strong>
+          Remove all 8 documents and 1,284 chunks. Chat history is preserved but citations will be broken.
+        </div>
+        <button class="btn btn-danger" style="white-space:nowrap;flex-shrink:0;">Delete documents</button>
+      </div>
+      <div style="height:1px;background:rgba(239,68,68,0.12);"></div>
+      <div class="danger-item">
+        <div class="danger-desc">
+          <strong>Delete workspace</strong>
+          Permanently delete HR Workspace, all documents, conversations, and analytics data. This action cannot be recovered.
+        </div>
+        <button class="btn btn-danger" style="white-space:nowrap;flex-shrink:0;">Delete workspace</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+</body>
+</html>
