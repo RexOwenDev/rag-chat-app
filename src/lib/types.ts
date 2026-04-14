@@ -76,13 +76,28 @@ export interface Message {
   conversation_id: string;
   role: 'user' | 'assistant';
   content: string;
+  retrieved_chunk_ids: string[];
   cited_chunk_ids: string[];
   faithfulness_score: number | null;
   relevance_score: number | null;
   input_tokens: number | null;
   output_tokens: number | null;
-  latency_ms: number | null;
   created_at: string;
+}
+
+/**
+ * Citation annotation attached to each assistant UIMessage via the data stream.
+ * Written server-side as `data-citations` part; read client-side from message.parts.
+ */
+export interface MessageCitation {
+  index: number;          // [1], [2], … displayed inline in the response
+  chunkId: string;
+  documentId: string;
+  documentTitle: string;
+  excerpt: string;        // ≤ 300 chars of chunk content shown in the card
+  sourceType: DocumentSourceType | string;
+  sourceUrl: string | null;
+  pageNumber: number | null;
 }
 
 export interface QueryEvent {
@@ -109,7 +124,7 @@ export interface SearchResult {
   rrf_score: number;
 }
 
-/** Reranked search result, enriched with Cohere relevance score */
+/** Reranked search result, enriched with Cohere relevance score and document metadata */
 export interface RerankResult {
   chunkId: string;
   documentId: string;
@@ -118,4 +133,6 @@ export interface RerankResult {
   headingContext: string | null;
   pageNumber: number | null;
   relevanceScore: number;
+  sourceType: DocumentSourceType | string;
+  sourceUrl: string | null;
 }
