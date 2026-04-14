@@ -58,6 +58,11 @@ export async function loadHistory(
  * Saves a single message to the database.
  * Called in onFinish to persist both user and assistant turns.
  */
+/**
+ * Saves a single message and returns the new row's ID (null on failure).
+ * Called in onFinish to persist both user and assistant turns.
+ * Returns the message ID so callers can fire async follow-up jobs (e.g. eval).
+ */
 export async function saveMessage(
   supabase: SupabaseClient,
   conversationId: string,
@@ -69,7 +74,7 @@ export async function saveMessage(
     inputTokens?: number;
     outputTokens?: number;
   }
-): Promise<void> {
+): Promise<string | null> {
   const row = {
     conversation_id: conversationId,
     role,
@@ -80,10 +85,13 @@ export async function saveMessage(
     output_tokens: meta?.outputTokens ?? null,
   };
 
-  const { error } = await supabase.from('messages').insert(row);
+  const { data, error } = await supabase.from('messages').insert(row).select('id').single();
 
   if (error) {
     // Non-fatal: message persistence failure shouldn't break the streaming response
     console.error('[history] Failed to save message:', error.message);
+    return null;
   }
+
+  return (data as { id: string } | null)?.id ?? null;
 }

@@ -35,6 +35,8 @@ import { rerank } from '@/lib/rag/reranker';
 import { buildContext } from '@/lib/rag/context';
 import { buildRAGSystemPrompt } from '@/lib/rag/prompts';
 import { loadHistory, saveMessage } from '@/lib/chat/history';
+import { inngest } from '@/lib/inngest/client';
+import { trackQueryEvent } from '@/lib/analytics/track';
 import { chatRequestSchema } from '@/lib/validation/chat';
 import { config } from '@/lib/config';
 import type { MessageCitation } from '@/lib/types';
@@ -230,17 +232,15 @@ export async function POST(request: Request, { params }: RouteContext) {
           onFinish: async ({ text, usage }) => {
             const latencyMs = Date.now() - t0;
 
-            await Promise.all([
-              // Save assistant message with cited chunk IDs and token counts
+            // Run DB writes in parallel; capture assistant message ID for eval
+            const [assistantMsgId] = await Promise.all([
               saveMessage(supabase, conversationId!, 'assistant', text, {
                 retrievedChunkIds,
                 citedChunkIds: rerankChunkIds,
                 inputTokens: usage.inputTokens,
                 outputTokens: usage.outputTokens,
               }),
-              // Update conversation updated_at for sidebar sorting
               supabase.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId),
-              // Track analytics
               trackQueryEvent(supabase, {
                 workspaceId,
                 conversationId: conversationId!,
@@ -252,6 +252,20 @@ export async function POST(request: Request, { params }: RouteContext) {
                 latencyMs,
               }),
             ]);
+
+            // Fire-and-forget: async eval runs in Inngest after the stream completes
+            if (assistantMsgId) {
+              void inngest.send({
+                name: 'response/evaluate',
+                data: {
+                  messageId: assistantMsgId,
+                  conversationId: conversationId!,
+                  query: userQuery,
+                  response: text,
+                  contextChunkIds: rerankChunkIds,
+                },
+              });
+            }
           },
         });
 
@@ -269,44 +283,3 @@ export async function POST(request: Request, { params }: RouteContext) {
   }
 }
 
-// ─── Analytics helper ─────────────────────────────────────────────────────
-
-interface QueryEventData {
-  workspaceId: string;
-  conversationId: string;
-  userId: string;
-  queryText: string;
-  retrievedChunkIds: string[];
-  rerankChunkIds: string[];
-  responseTokens: number;
-  latencyMs: number;
-}
-
-// claude-sonnet-4.6 approximate pricing: $3/1M input + $15/1M output tokens
-const COST_PER_OUTPUT_TOKEN = 0.000015;
-
-async function trackQueryEvent(
-  supabase: ReturnType<typeof createClient> extends Promise<infer T> ? T : never,
-  data: QueryEventData
-): Promise<void> {
-  const totalCostUsd =
-    data.retrievedChunkIds.length * 0 + // chunks have no marginal cost
-    data.responseTokens * COST_PER_OUTPUT_TOKEN;
-
-  const row = {
-    workspace_id: data.workspaceId,
-    conversation_id: data.conversationId,
-    user_id: data.userId,
-    query_text: data.queryText,
-    retrieved_chunk_ids: data.retrievedChunkIds,
-    reranked_chunk_ids: data.rerankChunkIds,
-    response_tokens: data.responseTokens,
-    total_cost_usd: totalCostUsd,
-    latency_ms: data.latencyMs,
-  };
-
-  const { error } = await supabase.from('query_events').insert(row);
-  if (error) {
-    console.error('[chat] Failed to track query event', error.message);
-  }
-}

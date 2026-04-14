@@ -38,6 +38,9 @@ export interface RAGChatMessage {
   text: string;
   /** Raw parts (for citations, reasoning, etc.) */
   parts: UIMessage['parts'];
+  /** Async eval scores — populated when loading conversation history, not during streaming */
+  faithfulnessScore?: number | null;
+  relevanceScore?: number | null;
 }
 
 interface UseRAGChatOptions {

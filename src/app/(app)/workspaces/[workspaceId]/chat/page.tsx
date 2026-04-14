@@ -40,7 +40,7 @@ export default async function ChatPage({ params, searchParams }: PageProps) {
   if (conversationId) {
     const { data: messages } = await supabase
       .from('messages')
-      .select('id, role, content')
+      .select('id, role, content, faithfulness_score, relevance_score')
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
 
@@ -50,6 +50,8 @@ export default async function ChatPage({ params, searchParams }: PageProps) {
         role: m.role as 'user' | 'assistant',
         text: m.content,
         parts: [{ type: 'text' as const, text: m.content }],
+        faithfulnessScore: (m.faithfulness_score as number | null) ?? null,
+        relevanceScore: (m.relevance_score as number | null) ?? null,
       }));
     }
   }

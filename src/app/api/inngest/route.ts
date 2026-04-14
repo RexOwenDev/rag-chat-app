@@ -6,8 +6,9 @@
 import { serve } from 'inngest/next';
 import { inngest } from '@/lib/inngest/client';
 import { processDocument } from '@/lib/inngest/functions/process-document';
+import { evaluateResponse } from '@/lib/inngest/functions/evaluate-response';
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: [processDocument],
+  functions: [processDocument, evaluateResponse],
 });
